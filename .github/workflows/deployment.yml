@@ -1,0 +1,30 @@
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    name: 'Publish pterodactyl stack on the production server'
+
+    environment:
+      name: production
+      url: https://codinglab.gg
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: arwynfr/actions-docker-context@v2
+        with:
+          docker_host: 'ssh://${{ secrets.CODINGLABGG_SSH_USER }}@${{ secrets.CODINGLABGG_SSH_HOST }}'
+          context_name: 'prod-server'
+          ssh_key: ${{ secrets.CODINGLABGG_SSH_KEY }}
+          ssh_cert: ${{ secrets.CODINGLABGG_SSH_CERT }}
+
+      - name: 'Docker compose up on the production server'
+        working-directory: .
+        run: docker --context prod-server compose up -d
+        env:
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}

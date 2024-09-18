@@ -1,0 +1,45 @@
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'Username'
+        required: true
+        type: string
+      password:
+        description: 'Password'
+        required: true
+        type: string
+      email:
+        description: 'Email'
+        required: true
+        type: string
+      admin:
+        description: 'Is admin'
+        required: false
+        type: boolean
+      environment:
+        description: 'Environment'
+        type: environment
+        required: true
+
+jobs:
+  create-user:
+    runs-on: ubuntu-latest
+    name: 'Create pterodactyl user'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: arwynfr/actions-docker-context@v2
+        with:
+          docker_host: 'ssh://${{ secrets.CODINGLABGG_SSH_USER }}@${{ secrets.CODINGLABGG_SSH_HOST }}'
+          context_name: 'prod-server'
+          ssh_key: ${{ secrets.CODINGLABGG_SSH_KEY }}
+          ssh_cert: ${{ secrets.CODINGLABGG_SSH_CERT }}
+
+      - name: '`docker compose run php artisan p:user:mak` on the production server'
+        working-directory: .
+        run: docker --context prod-server compose run --rm panel php artisan p:user:make --username=${{ github.event.inputs.username }} --password=${{ github.event.inputs.password }} --email=${{ github.event.inputs.email }} --admin=${{ github.event.inputs.admin }} --name-first=Change --name-last=Me
+        env:
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}

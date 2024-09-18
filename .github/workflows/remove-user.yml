@@ -21,9 +21,9 @@ jobs:
           ssh_key: ${{ secrets.CODINGLABGG_SSH_KEY }}
           ssh_cert: ${{ secrets.CODINGLABGG_SSH_CERT }}
 
-      - name: '`docker compose run php artisan p:user:mak` on the production server'
+      - name: '`docker compose run php artisan p:user:delete` on the production server'
         working-directory: .
-        run: docker --context prod-server compose run --rm panel php artisan p:user:delete --user=${{ github.event.inputs.user }}
+        run: docker --context prod-server compose run --rm panel php artisan p:user:delete --user=${{ github.event.inputs.user }} --no-interaction
         env:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}

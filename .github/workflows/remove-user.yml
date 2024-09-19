@@ -23,7 +23,8 @@ jobs:
 
       - name: '`docker compose run php artisan p:user:delete` on the production server'
         working-directory: .
-        run: docker --context prod-server compose run --rm panel php artisan p:user:delete --user=${{ github.event.inputs.user }} --no-interaction
+        run: docker --context prod-server compose run --rm panel php artisan p:user:delete --no-interaction \
+        --user=${{ github.event.inputs.user }}
         env:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}

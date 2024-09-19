@@ -5,6 +5,14 @@ on:
         description: 'Username'
         required: true
         type: string
+      first_name:
+        description: 'First name'
+        required: false
+        type: string
+      last_name:
+        description: 'Last name'
+        required: false
+        type: string
       password:
         description: 'Password'
         required: true
@@ -39,7 +47,13 @@ jobs:
 
       - name: '`docker compose run php artisan p:user:mak` on the production server'
         working-directory: .
-        run: docker --context prod-server compose run --rm panel php artisan p:user:make --username=${{ github.event.inputs.username }} --password=${{ github.event.inputs.password }} --email=${{ github.event.inputs.email }} --admin=${{ github.event.inputs.admin == 'true' && 1 || 0 }} --name-first=Change --name-last=Me
+        run: docker --context prod-server compose run --rm panel php artisan p:user:make \
+        --username=${{ github.event.inputs.username }} \
+        --password=${{ github.event.inputs.password }} \
+        --email=${{ github.event.inputs.email }} \
+        --admin=${{ github.event.inputs.admin == 'true' && 1 || 0 }} \
+        --name-first=${{ github.event.inputs.first_name }} \
+        --name-last=${{ github.event.inputs.last_name }}
         env:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}

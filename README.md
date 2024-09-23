@@ -17,6 +17,8 @@ Open your github secrets and add the following:
 - `CODINGLABGG_SSH_HOST` : The host/ip of the server (`codinglab.gg`)
 - `CODINGLABGG_SSH_CERT` : The public certificate of the server (`ssh-keyscan codinglab.gg`)
 
+Make sure your server is setup with docker and docker compose plugin, and your user can run docker commands.
+
 Then push to the repository, [the github `panel-deployment.yml` action](./.github/workflows/panel-deployment.yml) will deploy the panel to the server.
 
 ## How to setup a fresh game server

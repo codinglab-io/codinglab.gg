@@ -63,6 +63,4 @@ services:
       DB_PORT: '3306'
 networks:
   default:
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+    driver: bridge

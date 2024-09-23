@@ -10,6 +10,9 @@ jobs:
   create-user:
     runs-on: ubuntu-latest
     name: 'Create pterodactyl user'
+    defaults:
+      run:
+        working-directory: ./pterodactyl/panel
 
     steps:
       - uses: actions/checkout@v4

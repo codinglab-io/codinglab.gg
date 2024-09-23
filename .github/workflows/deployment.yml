@@ -7,6 +7,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     name: 'Publish pterodactyl stack on the production server'
+    defaults:
+      run:
+        working-directory: ./pterodactyl/panel
 
     environment:
       name: production
@@ -23,7 +26,6 @@ jobs:
           ssh_cert: ${{ secrets.CODINGLABGG_SSH_CERT }}
 
       - name: 'Docker compose up on the production server'
-        working-directory: .
         run: docker --context prod-server compose up -d
         env:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}

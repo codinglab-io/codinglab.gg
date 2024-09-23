@@ -49,7 +49,6 @@ jobs:
           ssh_cert: ${{ secrets.CODINGLABGG_SSH_CERT }}
 
       - name: '`docker compose run php artisan p:user:mak` on the production server'
-        working-directory: .
         run: docker --context prod-server compose run --rm panel php artisan p:user:make \
         --username=${{ github.event.inputs.username }} \
         --password=${{ github.event.inputs.password }} \

@@ -1,18 +1,19 @@
 on:
-  workflow_dispatch:
-    inputs:
-      user:
-        description: 'username/email/UUID'
-        required: false
-        type: string
+  push:
+    branches:
+      - master
 
 jobs:
-  create-user:
+  publish:
     runs-on: ubuntu-latest
-    name: 'Create pterodactyl user'
+    name: 'Publish pterodactyl stack on the production server'
     defaults:
       run:
         working-directory: ./pterodactyl/panel
+
+    environment:
+      name: panel-prod
+      url: https://codinglab.gg
 
     steps:
       - uses: actions/checkout@v4
@@ -24,10 +25,8 @@ jobs:
           ssh_key: ${{ secrets.CODINGLABGG_SSH_KEY }}
           ssh_cert: ${{ secrets.CODINGLABGG_SSH_CERT }}
 
-      - name: '`docker compose run php artisan p:user:delete` on the production server'
-        working-directory: .
-        run: docker --context prod-server compose run --rm panel php artisan p:user:delete --no-interaction \
-        --user=${{ github.event.inputs.user }}
+      - name: 'Docker compose up on the production server'
+        run: docker --context prod-server compose up -d
         env:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}

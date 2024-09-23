@@ -49,13 +49,14 @@ jobs:
           ssh_cert: ${{ secrets.CODINGLABGG_SSH_CERT }}
 
       - name: '`docker compose run php artisan p:user:mak` on the production server'
-        run: docker --context prod-server compose run --rm panel php artisan p:user:make \
-        --username=${{ github.event.inputs.username }} \
-        --password=${{ github.event.inputs.password }} \
-        --email=${{ github.event.inputs.email }} \
-        --admin=${{ github.event.inputs.admin == 'true' && 1 || 0 }} \
-        --name-first=${{ github.event.inputs.first_name }} \
-        --name-last=${{ github.event.inputs.last_name }}
+        run: |
+          docker --context prod-server compose run --rm panel php artisan p:user:make \
+          --username=${{ github.event.inputs.username }} \
+          --password=${{ github.event.inputs.password }} \
+          --email=${{ github.event.inputs.email }} \
+          --admin=${{ github.event.inputs.admin == 'true' && 1 || 0 }} \
+          --name-first=${{ github.event.inputs.first_name }} \
+          --name-last=${{ github.event.inputs.last_name }}
         env:
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}

@@ -1,0 +1,170 @@
+networks:
+  dokploy-network:
+    external: true
+
+  pelican:
+
+  wings:
+    name: $NETWORK_NAME
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: $NETWORK_NAME
+    ipam:
+      config:
+        - subnet: $NETWORK_SUBNET
+
+services:
+  pelican-database:
+    image: $DATABASE_IMAGE
+    restart: unless-stopped
+    networks:
+      - pelican
+    volumes:
+      - $BASE_PATH/database:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: $DATABASE_NAME
+      MYSQL_USER: $DATABASE_USER
+      MYSQL_PASSWORD: $DATABASE_PASS
+      MYSQL_ROOT_PASSWORD: $DATABASE_ROOT_PASS
+
+  pelican-redis:
+    image: $REDIS_IMAGE
+    restart: unless-stopped
+    networks:
+      - pelican
+
+  pelican-panel:
+    image: $PANEL_IMAGE
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:$PANEL_PORT/up']
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - dokploy-network
+      - pelican
+    expose:
+      - 80
+    volumes:
+      - $BASE_PATH/panel:$PANEL_PATH
+    environment:
+      XDG_DATA_HOME: $PANEL_PATH
+      APP_TIMEZONE: $TIMEZONE
+      APP_URL: $PANEL_URL_SCHEME://$PANEL_URL, http://, https://
+      APP_DEBUG: $DEBUG
+      APP_NAME: $NAME
+      TRUSTED_PROXIES: $TRUSTED_PROXIES
+      ADMIN_EMAIL: $EMAIL
+      DB_CONNECTION: $DATABASE_TYPE
+      DB_HOST: pelican-database
+      DB_PORT: $DATABASE_PORT
+      DB_DATABASE: $DATABASE_NAME
+      DB_USERNAME: $DATABASE_USER
+      DB_PASSWORD: $DATABASE_PASS
+      REDIS_HOST: pelican-redis
+      REDIS_PORT: $REDIS_PORT
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      FILAMENT_TOP_NAVIGATION: $TOP_NAVIGATION
+      RECAPTCHA_ENABLED: false
+      APP_BACKUP_DRIVER: wings
+      MAIL_MAILER: log
+      PANEL_CLIENT_ALLOCATIONS_ENABLED: $CLIENT_ALLOCATIONS
+      PANEL_SEND_INSTALL_NOTIFICATION: false
+      PANEL_SEND_REINSTALL_NOTIFICATION: false
+      PANEL_EDITABLE_SERVER_DESCRIPTIONS: $EDITABLE_SERVER_DESCRIPTIONS
+      PANEL_USE_BINARY_PREFIX: $BINARY_PREFIX
+      BACKUP_THROTTLE_LIMIT: $BACKUP_THROTTLE_LIMIT
+      BACKUP_THROTTLE_PERIOD: $BACKUP_THROTTLE_PERIOD
+      GUZZLE_TIMEOUT: $REQUEST_TIMEOUT
+      GUZZLE_CONNECT_TIMEOUT: $CONNECT_TIMEOUT
+      APP_ACTIVITY_PRUNE_DAYS: $ACTIVITY_PRUNE_DAYS
+      APP_ACTIVITY_HIDE_ADMIN: $ACTIVITY_HIDE_ADMIN
+      APP_API_CLIENT_RATELIMIT: $CLIENT_RATELIMIT
+      APP_API_APPLICATION_RATELIMIT: $APPLICATION_RATELIMIT
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.$PANEL_TRAEFIK_NAME.rule=Host(`$PANEL_URL`)
+      - traefik.http.services.$PANEL_TRAEFIK_NAME.loadbalancer.server.port=$PANEL_PORT
+    depends_on:
+      - pelican-database
+      - pelican-redis
+
+  alpine:
+    image: $ALPINE_IMAGE
+    restart: no
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        cat <<EOF > /wings/config.yml
+        app_name: $NAME
+        uuid: $WINGS_UUID
+        token_id: $WINGS_TOKEN_ID
+        token: $WINGS_TOKEN
+        api:
+          host: 0.0.0.0
+          port: $WINGS_PORT
+          ssl:
+            enabled: false
+          upload_limit: $WINGS_UPLOAD_LIMIT
+        system:
+          root_directory: $BASE_PATH/wings/servers
+          data: $BASE_PATH/wings/servers/volumes
+          archive_directory: $BASE_PATH/wings/servers/archives
+          backup_directory: $BASE_PATH/wings/servers/backups
+          tmp_directory: $BASE_PATH/wings/temp
+          log_directory: $BASE_PATH/wings/logs
+          timezone: $TIMEZONE
+          sftp:
+            bind_address: 0.0.0.0
+            bind_port: $WINGS_SFTP_PORT
+          user:
+            mount_passwd: false
+        docker:
+          network:
+            interface: $NETWORK_GATEWAY
+            dns:
+              - $WINGS_DNS
+              - $WINGS_DNS_SECONDARY
+            name: $NETWORK_NAME
+            driver: bridge
+            network_mode: $NETWORK_NAME
+            IPv6: false
+            interfaces:
+              v4:
+                subnet: $NETWORK_SUBNET
+                gateway: $NETWORK_GATEWAY
+        remote: http://pelican-panel:$PANEL_PORT
+        allowed_origins:
+          - http://pelican-panel:$PANEL_PORT
+          - $PANEL_URL_SCHEME://$PANEL_URL
+        EOF
+        exit
+    volumes:
+      - $BASE_PATH/wings/data:/wings
+
+  pelican-wings:
+    image: $WINGS_IMAGE
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+      - pelican
+      - wings
+    volumes:
+      - $BASE_PATH/wings/data:/etc/pelican
+      - $BASE_PATH/wings/servers:$BASE_PATH/wings/servers
+      - $BASE_PATH/wings/temp:$BASE_PATH/wings/temp
+      - $BASE_PATH/wings/logs:$BASE_PATH/wings/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers
+    environment:
+      TZ: $TIMEZONE
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.$WINGS_TRAEFIK_NAME.rule=Host(`$WINGS_URL`)
+      - traefik.http.services.$WINGS_TRAEFIK_NAME.loadbalancer.server.port=$WINGS_PORT
+    depends_on:
+      - pelican-panel
+      - alpine

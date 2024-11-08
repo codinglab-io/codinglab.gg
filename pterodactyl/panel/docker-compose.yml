@@ -4,14 +4,14 @@ x-common:
     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
   panel:
     &panel-environment # This URL should be the URL that your reverse proxy routes to the panel server
-    APP_URL: 'https://panel.codinglab.gg'
+    APP_URL: 'http://panel.codinglab.gg'
     # A list of valid timezones can be found here: http://php.net/manual/en/timezones.php
     APP_TIMEZONE: 'Europe/Paris'
     APP_SERVICE_AUTHOR: 'noreply@codinglab.gg'
     TRUSTED_PROXIES: '*' # Set this to your proxy IP
     # Uncomment the line below and set to a non-empty value if you want to use Let's Encrypt
     # to generate an SSL certificate for the Panel.
-    LE_EMAIL: 'neolectron@codinglab.io'
+    # LE_EMAIL: 'neolectron@codinglab.io'
   mail: &mail-environment
     MAIL_FROM: 'noreply@codinglab.gg'
     MAIL_DRIVER: 'smtp'
@@ -25,31 +25,40 @@ x-common:
 services:
   database:
     image: mariadb:10.5
-    restart: always
+    restart: unless-stopped
     command: --default-authentication-plugin=mysql_native_password
     volumes:
-      - '/srv/pterodactyl/database:/var/lib/mysql'
+      - 'db-data:/var/lib/mysql'
     environment:
       <<: *db-environment
       MYSQL_DATABASE: 'panel'
       MYSQL_USER: 'pterodactyl'
+    networks:
+      - dokploy-network
+
   cache:
     image: redis:alpine
-    restart: always
+    restart: unless-stopped
+    networks:
+      - dokploy-network
   panel:
     image: ghcr.io/pterodactyl/panel:latest
-    restart: always
-    ports:
-      - '8080:80'
-      - '4430:443'
-    links:
+    restart: unless-stopped
+    depends_on:
       - database
       - cache
     volumes:
-      - '/srv/pterodactyl/var/:/app/var/'
-      - '/srv/pterodactyl/nginx/:/etc/nginx/http.d/'
-      - '/srv/pterodactyl/certs/:/etc/letsencrypt/'
-      - '/srv/pterodactyl/logs/:/app/storage/logs'
+      - '../files/pterodactyl/var/:/app/var/'
+      - '../files/pterodactyl/nginx/:/etc/nginx/http.d/'
+      - '../files/pterodactyl/certs/:/etc/letsencrypt/'
+      - '../files/pterodactyl/logs/:/app/storage/logs'
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.panel-app.rule=Host(`panel.codinglab.gg`)
+      - traefik.http.routers.panel-app.entrypoints=web
+      - traefik.http.services.panel-app.loadbalancer.server.port=80
     environment:
       <<: [*panel-environment, *mail-environment]
       DB_PASSWORD: *db-password
@@ -61,3 +70,10 @@ services:
       REDIS_HOST: 'cache'
       DB_HOST: 'database'
       DB_PORT: '3306'
+
+volumes:
+  db-data:
+
+networks:
+  dokploy-network:
+    external: true

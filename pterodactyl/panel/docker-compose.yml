@@ -61,6 +61,3 @@ services:
       REDIS_HOST: 'cache'
       DB_HOST: 'database'
       DB_PORT: '3306'
-networks:
-  default:
-    driver: bridge

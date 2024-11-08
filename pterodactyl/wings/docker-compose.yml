@@ -1,0 +1,40 @@
+services:
+  wings:
+    image: ghcr.io/pterodactyl/wings:latest
+    env_file:
+      - .env
+    restart: always
+    networks:
+      - pterodactyl
+      - wings0
+    ports:
+      - '2022:2022'
+      - '443:443'
+    tty: true
+    environment:
+      TZ: 'UTC'
+      WINGS_UID: 988
+      WINGS_GID: 988
+      WINGS_USERNAME: pterodactyl
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - '/var/lib/docker/containers/:/var/lib/docker/containers/'
+      - '/tmp/pterodactyl/:/tmp/pterodactyl/'
+      - '/etc/ssl/certs:/etc/ssl/certs:ro'
+      - '${DATA_DIR}/wings/etc/:/etc/pterodactyl/'
+      - '${DATA_DIR}/wings/logs:/var/log/pterodactyl/'
+      - '${SERVERS_DATA_FULL_PATH}:${SERVERS_DATA_FULL_PATH}'
+      # required if ssl by letsencrypt is enabled
+      - '/etc/letsencrypt:/etc/letsencrypt'
+
+networks:
+  pterodactyl:
+    external: true
+  wings0:
+    name: wings0
+    driver: bridge
+    ipam:
+      config:
+        - subnet: '172.21.0.0/16'
+    driver_opts:
+      com.docker.network.bridge.name: wings0

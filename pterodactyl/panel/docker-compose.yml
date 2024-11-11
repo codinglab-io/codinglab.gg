@@ -54,11 +54,6 @@ services:
       - '../files/pterodactyl/logs/:/app/storage/logs'
     networks:
       - dokploy-network
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.panel-app.rule=Host(`panel.codinglab.gg`)
-      - traefik.http.routers.panel-app.entrypoints=web
-      - traefik.http.services.panel-app.loadbalancer.server.port=80
     environment:
       <<: [*panel-environment, *mail-environment]
       DB_PASSWORD: *db-password

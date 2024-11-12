@@ -21,11 +21,9 @@ services:
       - '/var/lib/docker/containers/:/var/lib/docker/containers/'
       - '/tmp/pterodactyl/:/tmp/pterodactyl/'
       - '/etc/ssl/certs:/etc/ssl/certs:ro'
-      - '${DATA_DIR}/wings/etc/:/etc/pterodactyl/'
-      - '${DATA_DIR}/wings/logs:/var/log/pterodactyl/'
+      - '../files/wings/etc/:/etc/pterodactyl/'
+      - '../files/wings/logs:/var/log/pterodactyl/'
       - '${SERVERS_DATA_FULL_PATH}:${SERVERS_DATA_FULL_PATH}'
-      # required if ssl by letsencrypt is enabled
-      - '/etc/letsencrypt:/etc/letsencrypt'
 
 networks:
   pterodactyl:
